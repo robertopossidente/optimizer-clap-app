@@ -1,1 +1,4 @@
-t2micro: 0.0116
+t2.nano: 0.0058
+t2.micro: 0.0116
+t2.small: 0.023
+t2.medium: 0.0464
