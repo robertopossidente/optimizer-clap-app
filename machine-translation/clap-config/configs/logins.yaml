@@ -1,0 +1,8 @@
+login-ubuntu:
+    user: ubuntu
+    keypair_name: gan-clap-keypair
+    keypair_public_file: gan-clap-keypair.pub
+    keypair_private_file: gan-clap-keypair.pem
+    sudo: true
+    sudo_user: root
+

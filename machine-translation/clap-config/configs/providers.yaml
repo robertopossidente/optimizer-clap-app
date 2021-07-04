@@ -1,0 +1,7 @@
+aws-config-us-east-1:
+    provider: aws
+    access_keyfile: aws-keypair.pub
+    secret_access_keyfile: aws-keypair.pem
+    url: https://ec2.us-east-1.amazonaws.com
+    region: us-east-1
+

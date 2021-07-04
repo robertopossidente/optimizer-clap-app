@@ -1,0 +1,77 @@
+setups:
+  setup-initial:
+    roles:
+    - name: gan
+    actions:
+    - role: gan
+      action: update-packages
+
+  setup-packages:
+    actions:
+    - role: gan
+      action: install-packages
+      extra:
+        packages: python3-pip, build-essential, cmake,  openmpi-bin, openmpi-common, openmpi-doc, libopenmpi-dev
+
+  setup-commands:
+    actions:
+    - role: gan
+      action: run-command
+      extra:
+        cmd: sudo apt-get -y install python-is-python3
+        
+  setup-env:
+    actions:
+    - role: gan
+      action: run-command
+      extra:
+        cmd: pip install mxnet gluonnlp sacremoses 
+
+  setup-horovod:
+    actions:
+    - role: gan
+      action: run-command
+      extra:
+        cmd: pip install horovod --no-cache-dir 
+
+  setup-git:
+    actions:
+    - role: gan
+      action: run-command
+      extra:  
+        cmd: git clone --branch train https://github.com/robertopossidente/AMLC19-GluonNLP.git 
+
+  run-training:
+    actions:
+    - role: gan
+      action: run-command
+      extra:
+        cmd: nohup mpirun -np 1 -H localhost:1 -bind-to none -map-by slot python /home/ubuntu/AMLC19-GluonNLP/03_machine_translation/train.py --batch_size 32 --save_dir transformer_en_de_u512 --epochs 1 &
+
+clusters:
+  my-cluster:
+
+      options:
+      ssh_to: jobmanager
+
+    nodes:
+      jobmanager:
+        type: type-b
+        count: 1
+        setups:
+        - setup-initial
+
+      taskmanager:
+        type: type-b
+        count: 1
+        min_count: 1
+        setups:
+        - setup-initial
+
+    after:
+    - setup-packages
+    - setup-commands
+    - setup-env
+    - setup-horovod
+    - setup-git
+    - run-training

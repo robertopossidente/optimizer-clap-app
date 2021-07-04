@@ -1,0 +1,6 @@
+gluonnlp==0.10.0
+mxnet==1.8.0.post0
+sacremoses==0.0.45
+horovod==0.22.1
+
+
