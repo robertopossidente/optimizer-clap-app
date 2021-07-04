@@ -1,0 +1,8 @@
+---
+- hosts: all
+  gather_facts: True    # Query a set of variables in remote hosts
+  gather_subset: min
+  tasks:
+  - name: Get iteration time from a fact
+    set_fact:
+      interation_time: "{{ ansible_local.times.iteration_time }}"
