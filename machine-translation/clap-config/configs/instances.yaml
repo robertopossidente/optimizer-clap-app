@@ -1,22 +1,4 @@
-type-micro:
-    provider: aws-config-us-east-1
-    login: login-ubuntu
-    flavor: t2.micro
-    image_id: ami-09e67e426f25ce0d7
-    #image_id: ami-0747bdcabd34c712a
-    boot_disk_size: 16
-    security_group: gan-clap-sg-allopen
-
-type-small:
-    provider: aws-config-us-east-1
-    login: login-ubuntu
-    flavor: t2.small
-    image_id: ami-09e67e426f25ce0d7
-    #image_id: ami-0747bdcabd34c712a
-    boot_disk_size: 16
-    security_group: gan-clap-sg-allopen
-
-type-medium:
+type-a:
     provider: aws-config-us-east-1
     login: login-ubuntu
     flavor: t2.medium
@@ -24,3 +6,50 @@ type-medium:
     #image_id: ami-0747bdcabd34c712a
     boot_disk_size: 16
     security_group: gan-clap-sg-allopen
+
+type-b:
+    provider: aws-config-us-east-1
+    login: login-ubuntu
+    flavor: t2.large
+    image_id: ami-09e67e426f25ce0d7
+    #image_id: ami-0747bdcabd34c712a
+    boot_disk_size: 16
+    security_group: gan-clap-sg-allopen
+
+type-c:
+    provider: aws-config-us-east-1
+    login: login-ubuntu
+    flavor: t2.xlarge
+    image_id: ami-09e67e426f25ce0d7
+    #image_id: ami-0747bdcabd34c712a
+    boot_disk_size: 16
+    security_group: gan-clap-sg-allopen
+
+type-d:
+    provider: aws-config-us-east-1
+    login: login-ubuntu
+    flavor: c5.large
+    image_id: ami-09e67e426f25ce0d7
+    #image_id: ami-0747bdcabd34c712a
+    boot_disk_size: 16
+    security_group: gan-clap-sg-allopen
+
+type-e:
+    provider: aws-config-us-east-1
+    login: login-ubuntu
+    flavor: c5.xlarge
+    image_id: ami-09e67e426f25ce0d7
+    #image_id: ami-0747bdcabd34c712a
+    boot_disk_size: 16
+    security_group: gan-clap-sg-allopen
+
+type-f:
+    provider: aws-config-us-east-1
+    login: login-ubuntu
+    flavor: c5.2xlarge
+    image_id: ami-09e67e426f25ce0d7
+    #image_id: ami-0747bdcabd34c712a
+    boot_disk_size: 16
+    security_group: gan-clap-sg-allopen
+
+
