@@ -10,6 +10,12 @@ from app.cli.modules.node import get_node_manager, get_config_db
 from app.cli.modules.role import get_role_manager
 from app.cli.modules.cluster import get_cluster_config_db, get_cluster_manager
 
+import yaml
+from dataclasses import asdict
+from app.cli.modules.node import get_config_db, get_node_manager
+from clap.utils import float_time_to_string, path_extend
+from clap.executor import SSHCommandExecutor, AnsiblePlaybookExecutor
+
 # Get configuration templates of instances (instances.yaml) and
 # clusters (~/.clap/configs/clusters)
 instances_configuration = get_config_db()
@@ -20,6 +26,9 @@ node_manager = get_node_manager()
 role_manager = get_role_manager()
 cluster_manager = get_cluster_manager()
 
+configuration_db = get_config_db()
+# Private's path (usually ~/.clap/private/) will be used for other methods
+private_path = node_manager.private_path
 
 # Class Reporter
 # You must implement these 3 methods as speficied in the document
@@ -27,7 +36,41 @@ class Reporter:
     def get_metrics(self, cluster_id: str, experiment_id: str,
                     pi_logs_dir: str, instance_costs: Dict[str, float]) -> \
             Dict[str, float]:
-        pass
+        cluster = cluster_manager.get_cluster_by_id(cluster_id)
+        cluster_dict = asdict(cluster)
+        print(yaml.dump(cluster_dict, indent=4))
+        cluster_nodes = cluster_manager.get_all_cluster_nodes(cluster_id)
+        print(cluster_nodes)
+        cluster_nodes_with_type = cluster_manager.get_cluster_nodes_types(cluster_id)
+        print(cluster_nodes_with_type)
+        cluster_nodes_with_type_dump = cluster_manager.get_cluster_nodes_types(cluster_id)
+        print(yaml.dump(cluster_nodes_with_type_dump))
+
+        playbook_file = path_extend('~/.clap/roles/roles/getfacts.yml')
+        inventory = AnsiblePlaybookExecutor.create_inventory(cluster_nodes, private_path)
+        executor = AnsiblePlaybookExecutor(playbook_file, private_path, inventory=inventory)
+        result = executor.run()
+
+        print(f"Did the playbook executed? {result.ok}")
+        print(f"Ansible playbook return code: {result.ret_code}")
+        print(f"Let's check how nodes executed: ")
+        for node_id, status in result.hosts.items():
+            print(f"    Node {node_id}: {status}")
+        print(f"Let's check variables set using set_fact module: ")
+        for node_id, facts in result.vars.items():
+            print(f"    Node {node_id}: {facts}")
+            iteration_times = { node_id, facts}
+            timestamp_dir = path_extend(experiment_dir, 'timestamp', pi_logs_dir)
+            timestamp_file = path_extend(timestamp_dir, str(int(time.time())), '.out')
+            with open(timestamp_file) as outfile:
+                yaml.dump(iteration_times, outfile, default_flow_style=False)
+
+        instance_cost = yaml_load('vm_prices.yaml')
+        instances = instance_cost.getKeys()
+
+        node_prices = instance_cost.getValues() * iteration_times.getValues()
+
+        return node_prices
 
     def terminated(self, cluster_id: str, experiment_id: str) -> bool:
         pass
@@ -50,9 +93,11 @@ def optimize_it(cluster_id: str, experiment_id: str, vm_price_file: str,
                 root_dir: str, report_time: int = 60) -> int:
     # Create experiments directory
     experiment_dir = path_extend(root_dir, experiment_id, str(int(time.time())))
-    app_results_dir = path_extend(experiment_dir, 'app_results')
-    optimizer_logs_dir = path_extend(experiment_dir, 'optimizer_logs')
-    pis_logs_dir = path_extend(experiment_dir, 'PIs_logs')
+    timestamp_dir = path_extend(experiment_dir, 'timestamp')
+    app_results_dir = path_extend(timestamp_dir, 'app_results')
+    optimizer_logs_dir = path_extend(timestamp_dir, 'optimizer_logs')
+    pis_logs_dir = path_extend(timestamp_dir, 'PIs_logs')
+    os.makedirs(timestamp_dir, exist_ok=True)
     os.makedirs(app_results_dir, exist_ok=True)
     os.makedirs(optimizer_logs_dir, exist_ok=True)
     os.makedirs(pis_logs_dir, exist_ok=True)
