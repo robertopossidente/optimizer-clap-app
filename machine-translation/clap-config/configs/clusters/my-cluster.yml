@@ -11,7 +11,7 @@ setups:
     - role: gan
       action: install-packages
       extra:
-        packages: python3-pip, build-essential, cmake,  openmpi-bin, openmpi-common, openmpi-doc, libopenmpi-dev
+        packages: python3-pip, build-essential, cmake, openmpi-bin, openmpi-common, openmpi-doc, libopenmpi-dev
 
   setup-commands:
     actions:
@@ -39,34 +39,54 @@ setups:
     - role: gan
       action: run-command
       extra:  
-        cmd: git clone --branch train https://github.com/robertopossidente/AMLC19-GluonNLP.git 
+        cmd: git clone https://github.com/robertopossidente/optimizer-clap-app.git
+
+  setup-facts:
+    actions:
+    - role: gan
+      action: run-command
+      extra:
+        cmd: sudo touch /etc/ansible/facts.d/times.fact && sudo mkdir -p /etc/ansible/facts.d/
+  
+  setup-ssh:
+    actions:
+    - role: gan
+      action: run-command
+      extra:  
+        cmd: sudo chown ubuntu:ubuntu /home/ubuntu/.ssh/id_rsa && sudo cp optimizer-clap-app/machine-translation/clap-config/private/gan-clap-keypair.pem /home/ubuntu/.ssh/id_rsa 
 
   run-training:
     actions:
     - role: gan
       action: run-command
       extra:
-        cmd: nohup mpirun -np 1 -H localhost:1 -bind-to none -map-by slot python /home/ubuntu/AMLC19-GluonNLP/03_machine_translation/train.py --batch_size 32 --save_dir transformer_en_de_u512 --epochs 1 &
+        cmd: mpirun -np 1 -H localhost:1 -bind-to none -map-by slot python /home/ubuntu/optimizer-clap-app/machine-translation/my-train.py 2>&1 > log.txt 
 
 clusters:
   my-cluster:
-
-      options:
-      ssh_to: jobmanager
+    #options:
+    #  ssh_to: jobmanager
 
     nodes:
       jobmanager:
-        type: type-b
+        type: type-a
         count: 1
         setups:
         - setup-initial
 
       taskmanager:
-        type: type-b
+        type: type-a
         count: 1
         min_count: 1
         setups:
         - setup-initial
+      
+      #taskmanager:
+      #  type: type-a
+      #  count: 1
+      #  min_count: 1
+      #  setups:
+      #  - setup-initial
 
     after:
     - setup-packages
@@ -74,4 +94,6 @@ clusters:
     - setup-env
     - setup-horovod
     - setup-git
+    - setup-facts
+    - setup-ssh
     - run-training
