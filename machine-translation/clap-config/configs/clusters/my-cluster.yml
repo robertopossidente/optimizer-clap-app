@@ -46,16 +46,16 @@ setups:
     - role: gan
       action: run-command
       extra:
-        cmd: sudo mkdir -p /etc/ansible/facts.d/ && sudo touch /etc/ansible/facts.d/times.fact
+        cmd: sudo mkdir -p /etc/ansible/facts.d/ && sudo touch /etc/ansible/facts.d/times.fact && sudo chwon ubuntu:ubuntu /etc/ansible/facts.d/times.fact 
 
   setup-ssh:
     actions:
     - role: gan
       action: run-command
       extra:  
-        cmd: chmod 400 optimizer-clap-app/machine-translation/clap-config/private/gan-clap-keypair.pem && sudo cp optimizer-clap-app/machine-translation/clap-config/private/gan-clap-keypair.pem /home/ubuntu/.ssh/id_rsa && sudo chown ubuntu:ubuntu /home/ubuntu/.ssh/id_rsa
+        cmd: sudo chmod 400 optimizer-clap-app/machine-translation/clap-config/private/gan-clap-keypair.pem && sudo cp optimizer-clap-app/machine-translation/clap-config/private/gan-clap-keypair.pem /home/ubuntu/.ssh/id_rsa && sudo chown ubuntu:ubuntu /home/ubuntu/.ssh/id_rsa
 
-  run-training: 
+  run-training:
     actions:
     - role: gan
       action: run-command
@@ -92,8 +92,8 @@ clusters:
     - setup-packages
     - setup-commands
     - setup-env
-    - setup-horovod
     - setup-git
     - setup-facts
     - setup-ssh
+    - setup-horovod
     - run-training
