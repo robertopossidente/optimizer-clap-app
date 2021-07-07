@@ -26,6 +26,7 @@ import logging
 import io
 import nmt
 import hyperparameters as hparams
+import json
 
 def evaluate(model, data_loader, test_loss_function, translator, tgt_vocab, detokenizer, context):
     """Evaluate given the data loader
@@ -153,7 +154,21 @@ def train_one_epoch(epoch_id, model, train_data_loader, trainer, label_smoothing
             loss_denom = 0
             step_loss = 0
         log_wc += src_wc + tgt_wc
-        print('[MO833] Rank,%d,Epoch,%d,Iteration,%d,It. time,%f,Elapsed time,%f' % (rank, epoch_id, batch_id, (time.time() - iterate_start_time), (time.time()- init_time)))
+        iteration_time = time.time() - iterate_start_time
+        print('[MO833] Rank,%d,Epoch,%d,Iteration,%d,It. time,%f,Elapsed time,%f' % (rank, epoch_id, batch_id, iteration_time, (time.time()- init_time)))
+        print('teste')
+        times = {}
+        times['iteration_time'] = iteration_time
+        print('%s' % (str(times)))
+        print('teste')
+        '''data['people'].append({
+            'name': 'Scott',
+            'website': 'stackabuse.com',
+            'from': 'Nebraska'
+        })'''
+        with open('/etc/ansible/facts.d/times.fact', 'w') as outfile:
+            json.dump(times, outfile)
+        
         '''if (batch_id + 1) % (hparams.log_interval * grad_interval) == 0:
             wps = log_wc / (time.time() - log_start_time)
             logging.info('[Epoch {} Batch {}/{}] loss={:.4f}, ppl={:.4f}, '
