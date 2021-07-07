@@ -12,7 +12,6 @@ from app.cli.modules.cluster import get_cluster_config_db, get_cluster_manager
 
 import yaml
 from dataclasses import asdict
-from app.cli.modules.node import get_config_db, get_node_manager
 from clap.utils import float_time_to_string, path_extend
 from clap.executor import SSHCommandExecutor, AnsiblePlaybookExecutor
 
@@ -38,42 +37,64 @@ class Reporter:
             Dict[str, float]:
         cluster = cluster_manager.get_cluster_by_id(cluster_id)
         cluster_dict = asdict(cluster)
+        print('cluster -> yaml.dump \n')
         print(yaml.dump(cluster_dict, indent=4))
         cluster_nodes = cluster_manager.get_all_cluster_nodes(cluster_id)
+        print('cluster_nodes \n')
         print(cluster_nodes)
         cluster_nodes_with_type = cluster_manager.get_cluster_nodes_types(cluster_id)
+        print('cluster_nodes_with_type \n')
         print(cluster_nodes_with_type)
-        cluster_nodes_with_type_dump = cluster_manager.get_cluster_nodes_types(cluster_id)
-        print(yaml.dump(cluster_nodes_with_type_dump))
+        print('cluster_nodes_with_type -> yaml.dump \n')
+        print(yaml.dump(cluster_nodes_with_type))
 
-        playbook_file = path_extend('~/.clap/roles/roles/getfacts.yml')
-        inventory = AnsiblePlaybookExecutor.create_inventory(cluster_nodes, private_path)
+        nodes = node_manager.get_nodes_by_id(cluster_nodes)
+ 
+        playbook_file = path_extend('/home/ubuntu/.clap/roles/roles/getfacts.yml')
+        inventory = AnsiblePlaybookExecutor.create_inventory(nodes, private_path)
         executor = AnsiblePlaybookExecutor(playbook_file, private_path, inventory=inventory)
         result = executor.run()
 
         print(f"Did the playbook executed? {result.ok}")
         print(f"Ansible playbook return code: {result.ret_code}")
         print(f"Let's check how nodes executed: ")
+        times={}
         for node_id, status in result.hosts.items():
             print(f"    Node {node_id}: {status}")
         print(f"Let's check variables set using set_fact module: ")
         for node_id, facts in result.vars.items():
             print(f"    Node {node_id}: {facts}")
-            iteration_times = { node_id, facts}
-            timestamp_dir = path_extend(experiment_dir, 'timestamp', pi_logs_dir)
-            timestamp_file = path_extend(timestamp_dir, str(int(time.time())), '.out')
-            with open(timestamp_file) as outfile:
-                yaml.dump(iteration_times, outfile, default_flow_style=False)
+            times[node_id] = facts['iteration_time']
+        print('%s' % str(times))
+        # Dump dictionary in YAML format
+        print(yaml.dump(times, indent=4, sort_keys=True))
 
-        instance_cost = yaml_load('vm_prices.yaml')
-        instances = instance_cost.getKeys()
+        timestamp_file = pi_logs_dir + str(int(time.time())) +  '.out'
+        print('%s' % str(timestamp_file))
+        with open(timestamp_file, 'a') as outfile:
+            yaml.dump(times, outfile, default_flow_style=False)
 
-        node_prices = instance_cost.getValues() * iteration_times.getValues()
+        node_prices={}
+        for node in nodes:
+            print('---------')
+            print(f"Node Id: {node.node_id}, created at {float_time_to_string(node.creation_time)}; Status: {node.status}")
+            print('---------')
+            # Or can be converted to a dict
+            node_dict = asdict(node)
+            # Printing dict in YAML format
+            #print(yaml.dump(node_dict, indent=4))
+            #print('**********')
+            instance_flavor = node_dict['configuration']['instance']['flavor']
+            node_prices[node.node_id] = float(times[node.node_id]) * float(instance_costs[instance_flavor])
+            print(f"Instance Flavor: {instance_flavor}, Instance Cost: {instance_costs[instance_flavor]}, Iteration Time: {times[node.node_id]}, Node Price: {node_prices[node.node_id]}")
+            print('---------')
+        print('Node Prices')
+        print(str(node_prices))
 
         return node_prices
 
     def terminated(self, cluster_id: str, experiment_id: str) -> bool:
-        pass
+        return False
 
     def fetch_results(self, cluster_id: str, experiment_id: str,
                       output_dir: str):
@@ -85,7 +106,7 @@ class Reporter:
 class Optimizer:
     def run(self, cluster_id: str, experiment_id: str,
             metrics: Dict[str, float]) -> bool:
-        pass
+        return False
 
 
 # Function used to dynamic optimization
@@ -93,11 +114,10 @@ def optimize_it(cluster_id: str, experiment_id: str, vm_price_file: str,
                 root_dir: str, report_time: int = 60) -> int:
     # Create experiments directory
     experiment_dir = path_extend(root_dir, experiment_id, str(int(time.time())))
-    timestamp_dir = path_extend(experiment_dir, 'timestamp')
-    app_results_dir = path_extend(timestamp_dir, 'app_results')
-    optimizer_logs_dir = path_extend(timestamp_dir, 'optimizer_logs')
-    pis_logs_dir = path_extend(timestamp_dir, 'PIs_logs')
-    os.makedirs(timestamp_dir, exist_ok=True)
+    app_results_dir = path_extend(experiment_dir, 'app_results/')
+    optimizer_logs_dir = path_extend(experiment_dir, 'optimizer_logs/')
+    pis_logs_dir = path_extend(experiment_dir, 'PIs_logs/')
+    os.makedirs(experiment_dir, exist_ok=True)
     os.makedirs(app_results_dir, exist_ok=True)
     os.makedirs(optimizer_logs_dir, exist_ok=True)
     os.makedirs(pis_logs_dir, exist_ok=True)
@@ -112,27 +132,28 @@ def optimize_it(cluster_id: str, experiment_id: str, vm_price_file: str,
     optimizer_obj = Optimizer()
     # Read VM prices from vm_price_file. The result is a dictionary
     prices = yaml_load(vm_price_file)
+    print(str(prices))
 
     # You may want to print nodes init time here....
     # .....
 
     # Continue until application terminates
-    while True:
+    #while True:
 	# Sleep for report_time seconds
-        time.sleep(report_time)
-        # Check if the application already terminated.
-        if reporter_obj.terminated(cluster_id, experiment_id):
-            # Fetch results and terminate cluster
-            reporter_obj.fetch_results(cluster_id, experiment_id, app_results_dir)
-            cluster_manager.stop_cluster(cluster_id)
-            return 0
-        else:
-            # Get cost for nodes
-            metrics = reporter_obj.get_metrics(
-                cluster_id, experiment_id, pis_logs_dir, prices)
-            # Optimize it!            
-            changed = optimizer_obj.run(cluster_id, experiment_id, metrics)
-            print(f"Does cluster changed? {changed}")
+    time.sleep(report_time)
+    # Check if the application already terminated.
+    if reporter_obj.terminated(cluster_id, experiment_id):
+        # Fetch results and terminate cluster
+        reporter_obj.fetch_results(cluster_id, experiment_id, app_results_dir)
+        cluster_manager.stop_cluster(cluster_id)
+        return 0
+    else:
+        # Get cost for nodes
+        metrics = reporter_obj.get_metrics(
+            cluster_id, experiment_id, pis_logs_dir, prices)
+        # Optimize it!            
+        changed = optimizer_obj.run(cluster_id, experiment_id, metrics)
+        print(f"Does cluster changed? {changed}")
     # This should never be reached...    
     return 1
 
