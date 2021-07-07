@@ -156,11 +156,9 @@ def train_one_epoch(epoch_id, model, train_data_loader, trainer, label_smoothing
         log_wc += src_wc + tgt_wc
         iteration_time = time.time() - iterate_start_time
         print('[MO833] Rank,%d,Epoch,%d,Iteration,%d,It. time,%f,Elapsed time,%f' % (rank, epoch_id, batch_id, iteration_time, (time.time()- init_time)))
-        print('teste')
         times = {}
         times['iteration_time'] = iteration_time
         print('%s' % (str(times)))
-        print('teste')
         '''data['people'].append({
             'name': 'Scott',
             'website': 'stackabuse.com',
