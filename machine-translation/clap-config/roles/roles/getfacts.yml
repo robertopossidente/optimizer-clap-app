@@ -5,4 +5,4 @@
   tasks:
   - name: Get iteration time from a fact
     set_fact:
-      interation_time: "{{ ansible_local.times.iteration_time }}"
+      iteration_time: "{{ ansible_local.times.iteration_time }}"
