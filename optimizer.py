@@ -11,6 +11,7 @@ from app.cli.modules.role import get_role_manager
 from app.cli.modules.cluster import get_cluster_config_db, get_cluster_manager
 
 import yaml
+import datetime
 from dataclasses import asdict
 from clap.utils import float_time_to_string, path_extend
 from clap.executor import SSHCommandExecutor, AnsiblePlaybookExecutor
@@ -122,38 +123,55 @@ class Optimizer:
 
         nodes = node_manager.get_nodes_by_id(cluster_nodes)
 
-        node_id_higher_price = 0
-        node_id_lower_price = 1000
-        node_id_lower_price = [str]
+        print(str(metrics))
+
+        higher_price = 0.000
+        lower_price = 1000.00
+        higher_price_node_id=[]
+        lower_price_node_id=[]
+        high_instance_flavor=low_instance_flavor='flavor'
+        high_instance_type=low_instance_type='type'
         for node in nodes:
             node_dict = asdict(node)
-            if(metrics[node.node_id] > node_id_higher_price):
-                node_id_higher_price = node.node_id
+            instance_price = metrics[node.node_id]
+            if(instance_price > higher_price):
+                higher_price = float(metrics[node.node_id])
+                higher_price_node_id.clear()
+                higher_price_node_id.append(node.node_id)
                 high_instance_type = node_dict['configuration']['instance']['instance_config_id']
-            if(metrics[node.node_id] < node_id_lower_price):
-                node_id_lower_price = node.node_id
-                low_instance_type = node_dict['configuration']['instance']['instance_config_id:']
+                high_instance_flavor = node_dict['configuration']['instance']['flavor']
 
-        print(f"High Price Node ID: {node_id_higher_price}, Instance Type: {high_instance_type}") 
-        print(f"Lower Price Node ID: {node_id_lower_price}, Instance Type: {low_instance_type}")
-        
-        new_node_id = cluster_manager.grow(cluster_id, low_instance_type, count=1, min_count=1)
-        print(f"New Node: {new_node_id}")
+            if(instance_price < lower_price):
+                lower_price = float(metrics[node.node_id])
+                lower_price_node_id.clear()
+                lower_price_node_id.append(node.node_id)
+                low_instance_type = node_dict['configuration']['instance']['instance_config_id']
+                low_instance_flavor = node_dict['configuration']['instance']['flavor']
 
-        alive_node = node_manager.is_alive(new_node_id)
-        for node_id, alive_flag in alive_node.items():
-            if(alive_flag == True):
-                print(f"New Node: {new_node_id} is Alive")
-                new_nodes_types = {
-                    low_instance_type: new_node_id
-                }
-                cluster_manager.setup_cluster(cluster_id, nodes_being_added=new_nodes_types, 
-                                                                    start_at_stage='before_all')
-                stopped_node_id = node_manager.stop_nodes(node_id_higher_price)
-                print(f"Stopped Node: {stopped_node_id}")
-                result = True
-            else:
-                result = False
+        print(f"High Price Node ID: {higher_price_node_id}, Instance Type: {high_instance_type}") 
+        print(f"Lower Price Node ID: {lower_price_node_id}, Instance Type: {low_instance_type}")
+
+        if(high_instance_flavor!=low_instance_flavor):
+            new_node_id = cluster_manager.grow(cluster_id, node_type=low_instance_type, count=1, min_count=1)
+            print(f"New Node: {new_node_id}")
+
+            #if(high_instance_flavor!=low_instance_flavor)
+            alive_node = node_manager.is_alive(new_node_id)
+            for node_id, alive_flag in alive_node.items():
+                if(alive_flag == True):
+                    print(f"[INIT] New Node: {new_node_id}")
+                    new_node_ids = node_manager.get_nodes_by_id(new_node_id)
+                    for node in new_node_ids:
+                        print(f"[INIT] {float_time_to_string(node.creation_time)}: Created Node:{node.node_id} of #type {low_instance_flavor}")
+                    print(str(new_node_ids))
+                    new_nodes_types = {
+                        low_instance_type: new_node_id
+                    }
+                    cluster_manager.setup_cluster(cluster_id, nodes_being_added=new_nodes_types)
+                    stopped_node_id = node_manager.stop_nodes(higher_price_node_id)
+                    print(f"[STOP] %s: Terminated Node:{higher_price_node_id}" % (datetime.datetime.now()))
+                    result = True
+        result = False
 
         return result
 
