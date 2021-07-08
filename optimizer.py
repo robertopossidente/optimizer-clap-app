@@ -106,7 +106,58 @@ class Reporter:
 class Optimizer:
     def run(self, cluster_id: str, experiment_id: str,
             metrics: Dict[str, float]) -> bool:
-        return False
+
+        cluster = cluster_manager.get_cluster_by_id(cluster_id)
+        cluster_dict = asdict(cluster)
+        print('cluster -> yaml.dump \n')
+        print(yaml.dump(cluster_dict, indent=4))
+        cluster_nodes = cluster_manager.get_all_cluster_nodes(cluster_id)
+        print('cluster_nodes \n')
+        print(cluster_nodes)
+        cluster_nodes_with_type = cluster_manager.get_cluster_nodes_types(cluster_id)
+        print('cluster_nodes_with_type \n')
+        print(cluster_nodes_with_type)
+        print('cluster_nodes_with_type -> yaml.dump \n')
+        print(yaml.dump(cluster_nodes_with_type))
+
+        nodes = node_manager.get_nodes_by_id(cluster_nodes)
+
+        node_id_higher_price = 0
+        node_id_lower_price = 1000
+        node_id_lower_price = [str]
+        for node in nodes:
+            node_dict = asdict(node)
+            if(metrics[node.node_id] > node_id_higher_price):
+                node_id_higher_price = node.node_id
+                high_instance_type = node_dict['configuration']['instance']['instance_config_id']
+            if(metrics[node.node_id] < node_id_lower_price):
+                node_id_lower_price = node.node_id
+                low_instance_type = node_dict['configuration']['instance']['instance_config_id:']
+
+        print(f"High Price Node ID: {node_id_higher_price}, Instance Type: {high_instance_type}") 
+        print(f"Lower Price Node ID: {node_id_lower_price}, Instance Type: {low_instance_type}")
+        
+        new_node_id = cluster_manager.grow(cluster_id, low_instance_type, count=1, min_count=1)
+        print(f"New Node: {new_node_id}")
+
+        alive_node = node_manager.is_alive(new_node_id)
+        for node_id, alive_flag in alive_node.items():
+            if(alive_flag == True):
+                print(f"New Node: {new_node_id} is Alive")
+                new_nodes_types = {
+                    low_instance_type: new_node_id
+                }
+                cluster_manager.setup_cluster(cluster_id, nodes_being_added=new_nodes_types, 
+                                                                    start_at_stage='before_all')
+                stopped_node_id = node_manager.stop_nodes(node_id_higher_price)
+                print(f"Stopped Node: {stopped_node_id}")
+                result = True
+            else:
+                result = False
+
+        return result
+
+        
 
 
 # Function used to dynamic optimization
