@@ -25,14 +25,14 @@ setups:
     - role: gan
       action: run-command
       extra:
-        cmd: pip install mxnet gluonnlp sacremoses 
+        cmd: sudo pip install mxnet gluonnlp sacremoses 
 
   setup-horovod:
     actions:
     - role: gan
       action: run-command
       extra:
-        cmd: pip install horovod --no-cache-dir 
+        cmd: sudo pip install horovod --no-cache-dir 
 
   setup-git:
     actions:
@@ -46,7 +46,7 @@ setups:
     - role: gan
       action: run-command
       extra:
-        cmd: sudo mkdir -p /etc/ansible/facts.d/ && sudo touch /etc/ansible/facts.d/times.fact && sudo chwon ubuntu:ubuntu /etc/ansible/facts.d/times.fact 
+        cmd: sudo mkdir -p /etc/ansible/facts.d/ && sudo touch /etc/ansible/facts.d/times.fact && sudo chown ubuntu:ubuntu /etc/ansible/facts.d/times.fact 
 
   setup-ssh:
     actions:
@@ -68,14 +68,14 @@ clusters:
     #  ssh_to: jobmanager
 
     nodes:
-      jobmanager:
+      type-a:
         type: type-a
         count: 1
         setups:
         - setup-initial
 
-      taskmanager:
-        type: type-a
+      type-b:
+        type: type-b
         count: 1
         min_count: 1
         setups:
@@ -88,7 +88,10 @@ clusters:
       #  setups:
       #  - setup-initial
 
-    after:
+    before_all:
+    - setup-initial
+
+    after_all:
     - setup-packages
     - setup-commands
     - setup-env

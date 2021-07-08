@@ -1,4 +1,6 @@
-t2.nano: 0.0058
-t2.micro: 0.0116
-t2.small: 0.023
 t2.medium: 0.0464
+t2.large: 0.0555
+t2.xlarge: 0.0686
+c5.large: 0.0675
+c5.xlarge: 0.743
+c5.2xlarge: 0.0862
