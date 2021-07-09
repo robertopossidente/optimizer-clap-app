@@ -99,7 +99,19 @@ class Reporter:
 
     def fetch_results(self, cluster_id: str, experiment_id: str,
                       output_dir: str):
-        pass
+        cluster_nodes_with_type = cluster_manager.get_cluster_nodes_types(cluster_id)
+        master_id = cluster_nodes_with_type['type-a']
+        print(master_id)
+
+        nodes = node_manager.get_nodes_by_id(master_id)
+ 
+        playbook_file = path_extend('/home/ubuntu/.clap/roles/roles/fetchfile.yml')
+        inventory = AnsiblePlaybookExecutor.create_inventory(nodes, private_path)
+        executor = AnsiblePlaybookExecutor(playbook_file, private_path, inventory=inventory)
+        result = executor.run()
+
+        print(f"Did the playbook executed? {result.ok}")
+        print(f"Ansible playbook return code: {result.ret_code}")
 
 
 # Class Optimizer
@@ -107,7 +119,6 @@ class Reporter:
 class Optimizer:
     def run(self, cluster_id: str, experiment_id: str,
             metrics: Dict[str, float]) -> bool:
-
         cluster = cluster_manager.get_cluster_by_id(cluster_id)
         cluster_dict = asdict(cluster)
         print('cluster -> yaml.dump \n')
@@ -155,6 +166,7 @@ class Optimizer:
             new_node_id = cluster_manager.grow(cluster_id, node_type=low_instance_type, count=1, min_count=1)
             print(f"New Node: {new_node_id}")
 
+            cluster_node_actions=[]
             #if(high_instance_flavor!=low_instance_flavor)
             alive_node = node_manager.is_alive(new_node_id)
             for node_id, alive_flag in alive_node.items():
@@ -163,18 +175,33 @@ class Optimizer:
                     new_node_ids = node_manager.get_nodes_by_id(new_node_id)
                     for node in new_node_ids:
                         print(f"[INIT] {float_time_to_string(node.creation_time)}: Created Node: {node.node_id} of #type {low_instance_flavor}")
+                        cluster_node_actions.append(f"[INIT] {float_time_to_string(node.creation_time)}: Created Node: {node.node_id} of #type {low_instance_flavor}")
                     print(str(new_node_ids))
                     stopped_node_id = node_manager.stop_nodes(higher_price_node_id)
                     print(f"[STOP] %s: Terminated Node: {higher_price_node_id}" % (datetime.datetime.now()))
+                    cluster_node_actions.append(f"[STOP] %s: Terminated Node: {higher_price_node_id}" % (datetime.datetime.now()))
                     new_nodes_types = {
                         low_instance_type: new_node_id
                     }
+                    for node in new_node_ids:
+                        print(f"[SETUP] {float_time_to_string(node.creation_time)}: Setup started on Node: {node.node_id}")
+                        cluster_node_actions.append(f"[SETUP] {float_time_to_string(node.creation_time)}: Setup started on Node: {node.node_id}")
                     cluster_manager.setup_cluster(cluster_id, nodes_being_added=new_nodes_types, max_workers=1, start_at_stage='before_all')
+                    for node in new_node_ids:
+                        print(f"[SETUP] {float_time_to_string(node.creation_time)}: Setup finished on Node: {node.node_id}")
+                        cluster_node_actions.append(f"[SETUP] {float_time_to_string(node.creation_time)}: Setup finished on Node: {node.node_id}")
+                    optimization_file =  '/home/ubuntu/optimizer-clap-app/experiments/' + 'cluster-node-actions' +  '.out'
+                    print('%s' % str(optimization_file))
+                    print('%s' % str(cluster_node_actions))
+                    with open(optimization_file, 'a') as outfile:
+                        yaml.dump(cluster_node_actions, outfile, default_flow_style=False)
                     result = True
                 else:
                     result = False
         else:
             result = False
+
+        
 
         return result
 
