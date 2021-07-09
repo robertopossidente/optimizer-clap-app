@@ -1,7 +1,0 @@
----
-- hosts: all
-  gather_facts: no
-  tasks:
-  - name: Get iteration times
-    debug:
-    msg: {{  }}
