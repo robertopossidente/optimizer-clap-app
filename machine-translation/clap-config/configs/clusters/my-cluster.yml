@@ -81,12 +81,33 @@ clusters:
         setups:
         - setup-initial
       
-      #taskmanager:
-      #  type: type-a
-      #  count: 1
-      #  min_count: 1
-      #  setups:
-      #  - setup-initial
+      type-c:
+       type: type-c
+        count: 1
+        min_count: 1
+        setups:
+        - setup-initial
+      
+      type-d:
+       type: type-d
+        count: 1
+        min_count: 1
+        setups:
+        - setup-initial
+      
+      type-e:
+       type: type-e
+        count: 1
+        min_count: 1
+        setups:
+        - setup-initial
+
+      type-f:
+       type: type-f
+        count: 1
+        min_count: 1
+        setups:
+        - setup-initial
 
     before:
     - setup-initial
