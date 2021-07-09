@@ -52,7 +52,7 @@ if not args.no_cuda:
         args.no_cuda = True
 
 logging.basicConfig(level=logging.INFO)
-logging.info(args)
+#logging.info(args)
 
 # Initialize Horovod
 hvd.init()
@@ -252,17 +252,17 @@ average_param_dict = {k: mx.nd.array([0]) for k, v in
                                       model.collect_params().items()}
 update_average_param_dict = True
 model.collect_params().zero_grad()
-print('Numero de Epochs = %d' % (hparams.epochs))
+print('Epochs Quantity = %d' % (hparams.epochs))
 init_time = time.time()
 for epoch_id in range(hparams.epochs):
-    print('Epoch %d - train_one_epoch started' % (epoch_id))
+    #print('Epoch %d - train_one_epoch started' % (epoch_id))
     utils.train_one_epoch(epoch_id, model, train_data_loader, trainer,
                           label_smoothing, loss_function, grad_interval,
                           average_param_dict, update_average_param_dict,
                           step_num, ctx, hvd.rank(), init_time)
-    print('Epoch %d - train_one_epoch finished' % (epoch_id))
+    #print('Epoch %d - train_one_epoch finished' % (epoch_id))
     mx.nd.waitall()
-    print('Epoch %d - after waitall' % (epoch_id))
+    print('Rank = %d, Epoch %d - after waitall' % (hvd.rank(), epoch_id))
     # We define evaluation function as follows. The `evaluate` function use beam search translator
     # to generate outputs for the validation and testing datasets.
     '''valid_loss, _ = utils.evaluate(model, val_data_loader,

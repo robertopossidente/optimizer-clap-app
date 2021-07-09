@@ -158,7 +158,7 @@ def train_one_epoch(epoch_id, model, train_data_loader, trainer, label_smoothing
         print('[MO833] Rank,%d,Epoch,%d,Iteration,%d,It. time,%f,Elapsed time,%f' % (rank, epoch_id, batch_id, iteration_time, (time.time()- init_time)))
         times = {}
         times['iteration_time'] = iteration_time
-        print('%s' % (str(times)))
+        #print('%s' % (str(times)))
         '''data['people'].append({
             'name': 'Scott',
             'website': 'stackabuse.com',

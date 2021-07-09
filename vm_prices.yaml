@@ -1,6 +1,6 @@
-t2.medium: 0.0464
+t2.medium: 0.0264
 t2.large: 0.0555
 t2.xlarge: 0.0686
 c5.large: 0.0675
-c5.xlarge: 0.743
-c5.2xlarge: 0.0862
+c5.xlarge: 0.0743
+c5.2xlarge: 0.862

@@ -1,0 +1,11 @@
+---
+- hosts: all
+  gather_facts: no
+  tasks:
+  - name: Ansible fetch files from remote host to local
+    become: no
+    synchronize:
+      src: "/home/ubuntu/optimizer-clap-app/machine-translation/"
+      dest: "/home/ubuntu/optimizer-clap-app/machine-translation/"
+      mode: pull
+      recursive: yes
