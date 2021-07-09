@@ -39,14 +39,14 @@ setups:
     - role: gan
       action: run-command
       extra:  
-        cmd: git clone https://github.com/robertopossidente/optimizer-clap-app.git
+        cmd: sudo rm -rf optimizer-clap-app/ && git clone https://github.com/robertopossidente/optimizer-clap-app.git
 
   setup-facts:
     actions:
     - role: gan
       action: run-command
       extra:
-        cmd: sudo mkdir -p /etc/ansible/facts.d/ && sudo touch /etc/ansible/facts.d/times.fact && sudo chown ubuntu:ubuntu /etc/ansible/facts.d/times.fact 
+        cmd: sudo mkdir -p /etc/ansible/facts.d/ && sudo cp optimizer-clap-app/times.fact /etc/ansible/facts.d/ && sudo chown ubuntu:ubuntu /etc/ansible/facts.d/times.fact && sudo chmod 644 /etc/ansible/facts.d/times.fact
 
   setup-ssh:
     actions:
@@ -88,10 +88,10 @@ clusters:
       #  setups:
       #  - setup-initial
 
-    before_all:
+    before:
     - setup-initial
 
-    after_all:
+    after:
     - setup-packages
     - setup-commands
     - setup-env

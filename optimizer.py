@@ -162,16 +162,19 @@ class Optimizer:
                     print(f"[INIT] New Node: {new_node_id}")
                     new_node_ids = node_manager.get_nodes_by_id(new_node_id)
                     for node in new_node_ids:
-                        print(f"[INIT] {float_time_to_string(node.creation_time)}: Created Node:{node.node_id} of #type {low_instance_flavor}")
+                        print(f"[INIT] {float_time_to_string(node.creation_time)}: Created Node: {node.node_id} of #type {low_instance_flavor}")
                     print(str(new_node_ids))
+                    stopped_node_id = node_manager.stop_nodes(higher_price_node_id)
+                    print(f"[STOP] %s: Terminated Node: {higher_price_node_id}" % (datetime.datetime.now()))
                     new_nodes_types = {
                         low_instance_type: new_node_id
                     }
-                    cluster_manager.setup_cluster(cluster_id, nodes_being_added=new_nodes_types)
-                    stopped_node_id = node_manager.stop_nodes(higher_price_node_id)
-                    print(f"[STOP] %s: Terminated Node:{higher_price_node_id}" % (datetime.datetime.now()))
+                    cluster_manager.setup_cluster(cluster_id, nodes_being_added=new_nodes_types, max_workers=1, start_at_stage='before_all')
                     result = True
-        result = False
+                else:
+                    result = False
+        else:
+            result = False
 
         return result
 
@@ -207,22 +210,24 @@ def optimize_it(cluster_id: str, experiment_id: str, vm_price_file: str,
     # .....
 
     # Continue until application terminates
-    #while True:
+    while True:
 	# Sleep for report_time seconds
-    time.sleep(report_time)
-    # Check if the application already terminated.
-    if reporter_obj.terminated(cluster_id, experiment_id):
-        # Fetch results and terminate cluster
-        reporter_obj.fetch_results(cluster_id, experiment_id, app_results_dir)
-        cluster_manager.stop_cluster(cluster_id)
-        return 0
-    else:
-        # Get cost for nodes
-        metrics = reporter_obj.get_metrics(
-            cluster_id, experiment_id, pis_logs_dir, prices)
-        # Optimize it!            
-        changed = optimizer_obj.run(cluster_id, experiment_id, metrics)
-        print(f"Does cluster changed? {changed}")
+        time.sleep(report_time)
+        # Check if the application already terminated.
+        if reporter_obj.terminated(cluster_id, experiment_id):
+            # Fetch results and terminate cluster
+            reporter_obj.fetch_results(cluster_id, experiment_id, app_results_dir)
+            cluster_manager.stop_cluster(cluster_id)
+            return 0
+        else:
+            # Get cost for nodes
+            metrics = reporter_obj.get_metrics(
+                cluster_id, experiment_id, pis_logs_dir, prices)
+            # Optimize it!            
+            changed = optimizer_obj.run(cluster_id, experiment_id, metrics)
+            print(f"Does cluster changed? {changed}")
+            if changed==False:
+                return 0
     # This should never be reached...    
     return 1
 
